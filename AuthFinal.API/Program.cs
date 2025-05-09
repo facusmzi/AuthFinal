@@ -6,12 +6,11 @@ using AuthFinal.Infraestructure.Data;
 using AuthFinal.Infraestructure.ExternalServices.Redis;
 using AuthFinal.Infraestructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models; // Add this using directive
+using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Configuration;
 
 namespace AuthFinal.API
 {
@@ -22,10 +21,10 @@ namespace AuthFinal.API
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-
             builder.Services.AddControllers();
+
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+            builder.Services.AddEndpointsApiExplorer(); // Add this line
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "AuthFinal API", Version = "v1" });
@@ -42,32 +41,45 @@ namespace AuthFinal.API
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
             });
 
+            // Database configuration - check your connection string
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            }
 
-           builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(connectionString));
+
+            // Also register AppDbContext as DbContext for any generic repositories
+            builder.Services.AddScoped<DbContext>(provider => provider.GetService<AppDbContext>());
 
             // Configuración de Redis
-            builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(
-                builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
+            var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+            builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
 
             // Configuración de JWT
             var jwtKey = builder.Configuration["Authentication:SecretKey"];
-            var key = Encoding.ASCII.GetBytes(jwtKey ?? "DefaultSecretKeyForDevelopmentPurposesOnly");
+            if (string.IsNullOrEmpty(jwtKey))
+            {
+                throw new InvalidOperationException("JWT Secret Key not configured in appsettings.json.");
+            }
+            var key = Encoding.ASCII.GetBytes(jwtKey);
 
             builder.Services.AddAuthentication(x =>
             {
@@ -76,7 +88,6 @@ namespace AuthFinal.API
             })
             .AddJwtBearer(x =>
             {
-                
                 x.RequireHttpsMetadata = true;
                 x.SaveToken = true;
                 x.TokenValidationParameters = new TokenValidationParameters
@@ -89,7 +100,6 @@ namespace AuthFinal.API
                     ClockSkew = TimeSpan.Zero
                 };
 
-                // Validar token en cada solicitud (complemento para nuestro middleware)
                 x.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>
@@ -121,9 +131,19 @@ namespace AuthFinal.API
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
                 app.UseSwagger();
                 app.UseSwaggerUI();
+
+                // Seed the database with test data in development mode
+                try
+                {
+                    DatabaseSeeder.SeedDatabase(app.Services);
+                }
+                catch (Exception ex)
+                {
+                    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred while seeding the database.");
+                }
             }
 
             app.UseHttpsRedirection();
@@ -132,7 +152,6 @@ namespace AuthFinal.API
 
             app.UseAuthentication();
             app.UseAuthorization();
-
 
             app.MapControllers();
 
