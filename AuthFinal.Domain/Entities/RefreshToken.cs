@@ -12,11 +12,11 @@ namespace AuthFinal.Domain.Entities
         public string Token { get; set; }
         public DateTime ExpirationDate { get; set; }
         public bool IsRevoked { get; set; }
-        public string ReplacedByToken { get; set; }
-        public string ReasonRevoked { get; set; }
+        public string? ReplacedByToken { get; set; }
+        public string? ReasonRevoked { get; set; }
 
         // Relación con Session
         public Guid SessionId { get; set; }
-        public Session Session { get; set; }
+        public Session? Session { get; set; }
     }
 }
