@@ -5,7 +5,7 @@
 namespace AuthFinal.Infraestructure.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class SeedData : Migration
+    public partial class fixVerifyPassword : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

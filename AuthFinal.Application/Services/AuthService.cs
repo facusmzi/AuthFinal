@@ -10,6 +10,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using BC = BCrypt.Net.BCrypt;
 
 namespace AuthFinal.Application.Services
 {
@@ -301,15 +302,17 @@ namespace AuthFinal.Application.Services
 
         private bool VerifyPassword(string password, string storedHash)
         {
-            // Implementación de verificación de contraseña
-            // Asumiendo que usas hash+salt, deberás adaptar esto a tu método específico
-            using var hmac = new HMACSHA512(Encoding.UTF8.GetBytes("your-salt-key"));
-            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-
-            // Comparación segura contra timing attacks
-            return CryptographicOperations.FixedTimeEquals(
-                computedHash,
-                Convert.FromBase64String(storedHash));
+            try
+            {
+                // BCrypt.Verify compara la contraseña con el hash almacenado
+                // El hash ya contiene el salt, por lo que no es necesario proporcionarlo por separado
+                return BC.Verify(password, storedHash);
+            }
+            catch
+            {
+                // En caso de formato incorrecto o cualquier error, consideramos que la verificación falló
+                return false;
+            }
         }
 
         private string GetLocationFromIp(string ipAddress)

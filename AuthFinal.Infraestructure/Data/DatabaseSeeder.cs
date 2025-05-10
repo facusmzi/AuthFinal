@@ -8,6 +8,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using BC = BCrypt.Net.BCrypt;
 
 namespace AuthFinal.Infraestructure.Data
 {
@@ -135,18 +136,14 @@ namespace AuthFinal.Infraestructure.Data
         }
 
         /// <summary>
-        /// Hashes a password using SHA256
+        /// Hashes a password using bcrypt
         /// Note: In a production environment, you should use a more secure password hashing algorithm like BCrypt
         /// </summary>
         private static string HashPassword(string password)
         {
-            // This is a simple hash for testing purposes
-            // In a real application, use a proper password hashing library
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(hashedBytes);
-            }
+            // BCrypt generará automáticamente un salt seguro y lo incluirá en el hash resultante
+            // WorkFactor 12 es un buen equilibrio entre seguridad y rendimiento
+            return BC.HashPassword(password, workFactor: 12);
         }
     }
 }

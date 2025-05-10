@@ -15,7 +15,7 @@ namespace AuthFinal.Domain.Entities
         public string DeviceInfo { get; set; }
         public string Location { get; set; } // Opcional, podría implementarse con un servicio de geolocalización
         public bool IsRevoked { get; set; }
-        public string ReasonRevoked { get; set; }
+        public string? ReasonRevoked { get; set; }
 
         // Relación con el usuario
         public Guid UserId { get; set; }

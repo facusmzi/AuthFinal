@@ -94,14 +94,11 @@ namespace AuthFinal.API.Controllers
             try
             {
                 // Extraer sessionId del token JWT
-                var authHeader = HttpContext.Request.Headers["Authorization"].ToString();
-                if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+                var sessionId = User.Claims.FirstOrDefault(c => c.Type == "SessionId")?.Value;
+                if (string.IsNullOrEmpty(sessionId))
                 {
-                    return BadRequest(new { message = "Token no proporcionado" });
+                    return BadRequest(new { message = "Sesión no encontrada en el token" });
                 }
-
-                var token = authHeader.Substring("Bearer ".Length).Trim();
-                var sessionId = await _tokenService.ExtractSessionIdFromTokenAsync(token);
 
                 if (string.IsNullOrEmpty(sessionId))
                 {
@@ -179,7 +176,7 @@ namespace AuthFinal.API.Controllers
                 HttpOnly = true,
                 Secure = true, // Solo HTTPS
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(90) // Mismo tiempo que el refresh token
+                Expires = DateTime.UtcNow.AddDays(30) // Mismo tiempo que el refresh token
             };
 
             Response.Cookies.Append("refreshToken", token, cookieOptions);

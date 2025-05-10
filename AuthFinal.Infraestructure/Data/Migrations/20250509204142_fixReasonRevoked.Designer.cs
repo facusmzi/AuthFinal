@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuthFinal.Infraestructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250509011927_SeedData")]
-    partial class SeedData
+    [Migration("20250509204142_fixReasonRevoked")]
+    partial class fixReasonRevoked
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -121,7 +121,6 @@ namespace AuthFinal.Infraestructure.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ReasonRevoked")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SessionId")

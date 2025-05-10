@@ -3,6 +3,7 @@ using AuthFinal.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +16,22 @@ namespace AuthFinal.Infraestructure.Repositories
         public SessionRepository(DbContext context, ILogger<SessionRepository> logger)
             : base(context, logger)
         {
+        }
+
+
+        public async Task<IEnumerable<Session>> GetAllSessionsAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _dbSet
+                    .Where(s => !s.IsRevoked && s.ExpiresAt > DateTime.UtcNow)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all sessions");
+                throw;
+            }
         }
 
         public async Task<Session?> GetBySessionIdAsync(string sessionId, CancellationToken cancellationToken = default)

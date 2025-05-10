@@ -68,6 +68,7 @@ namespace AuthFinal.API.Middlewares
                     return;
                 }
 
+                context.User = principal;
                 // Opcional: actualizar último acceso para auditoría (pero no en cada request)
                 // Implementar alguna lógica para hacerlo con menor frecuencia (ej. una vez cada 10-15 min)
                 // await _sessionRepository.UpdateLastActiveAsync(sessionId);
